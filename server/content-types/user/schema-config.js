@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 
 module.exports = {
   attributes: {
@@ -9,6 +9,9 @@ module.exports = {
       hidden: true,
     },
     provider: {
+      hidden: true,
+    },
+    uid: {
       hidden: true,
     },
   },

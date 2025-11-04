@@ -10,8 +10,7 @@ const getAdvancedSettings = () => {
 };
 
 const authenticate = async (ctx) => {
-
-  const idToken = ctx?.request?.header?.authorization?.split(" ")?.[1]
+  const idToken = ctx?.request?.header?.authorization?.split(" ")?.[1];
 
   let decodedToken = null;
 
@@ -19,28 +18,32 @@ const authenticate = async (ctx) => {
     if (idToken) {
       decodedToken = await strapi.firebase.auth().verifyIdToken(idToken);
 
+      const rawEmail = decodedToken?.email;
+
       let user = null;
 
-      if (decodedToken?.email === undefined) {
+      if (!rawEmail) {
         return { authenticated: false };
       }
+
+      const normalizedEmail = rawEmail?.trim()?.toLowerCase();
 
       // fetch authenticated user
       user = await strapi.query("plugin::users-permissions.user").findOne({
         select: ["*"],
-        where: { email: decodedToken.email },
+        where: { email: normalizedEmail },
         populate: {
           role: {
-            select: ["id"]
-          }
-        }
+            select: ["id"],
+          },
+        },
       });
 
       if (!user) {
         await strapi.query("plugin::users-permissions.user").create({
           data: {
-            username: decodedToken.email,
-            email: decodedToken.email,
+            username: normalizedEmail,
+            email: normalizedEmail,
             provider: "firebase",
             confirmed: true,
             uid: decodedToken.uid,
@@ -49,12 +52,12 @@ const authenticate = async (ctx) => {
         });
         user = await strapi.query("plugin::users-permissions.user").findOne({
           select: ["*"],
-          where: { email: decodedToken.email },
+          where: { email: normalizedEmail },
           populate: {
             role: {
-              select: ["id"]
-            }
-          }
+              select: ["id"],
+            },
+          },
         });
       }
 
@@ -112,7 +115,6 @@ const verify = async (auth, config) => {
 
   let allowedActions = auth.allowedActions;
 
-
   if (!allowedActions) {
     const permissions = await strapi
       .query("plugin::users-permissions.permission")
@@ -130,7 +132,6 @@ const verify = async (auth, config) => {
 
   if (!isAllowed) {
     throw new ForbiddenError();
-    
   }
 };
 
